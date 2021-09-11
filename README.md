@@ -55,7 +55,6 @@ flutter run
 ## References
 
 - [**tru.ID** docs](https://developer.tru.id/docs)
-- [Amazon Cognito Identity GitHub repo](https://github.com/
 
 ## Meta
 
