@@ -1,0 +1,29 @@
+PODS:
+  - Flutter (1.0.0)
+  - tru-sdk-ios (0.2.4)
+  - tru_sdk_flutter (0.0.1):
+    - Flutter
+    - tru-sdk-ios (= 0.2.4)
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - tru_sdk_flutter (from `.symlinks/plugins/tru_sdk_flutter/ios`)
+
+SPEC REPOS:
+  trunk:
+    - tru-sdk-ios
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  tru_sdk_flutter:
+    :path: ".symlinks/plugins/tru_sdk_flutter/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
+  tru-sdk-ios: e6ed377ab975e707548219bfd96439b09cbc9708
+  tru_sdk_flutter: fe3a71f125bb5b3788aff6280d995184c32c695f
+
+PODFILE CHECKSUM: cc1f88378b4bfcf93a6ce00d2c587857c6008d3b
+
+COCOAPODS: 1.10.2
