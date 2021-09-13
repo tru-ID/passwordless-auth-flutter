@@ -11,11 +11,6 @@ class _RegistrationState extends State<Registration> {
   String? phoneNumber;
   @override
   Widget build(BuildContext context) {
-    MediaQueryData queryData;
-
-    queryData = MediaQuery.of(context);
-
-    var deviceWidth = queryData.size.width;
 
     return Scaffold(
       body: Container(
@@ -23,6 +18,7 @@ class _RegistrationState extends State<Registration> {
           children: [
             Container(
                 padding: EdgeInsets.only(bottom: 45.0),
+                margin: const EdgeInsets.only(top: 50),
                 child: Image.asset(
                   'assets/images/tru-id-logo.png',
                 )),
@@ -48,7 +44,7 @@ class _RegistrationState extends State<Registration> {
                   },
                   decoration: InputDecoration(
                     border: OutlineInputBorder(),
-                    hintText: 'Enter a search term',
+                    hintText: 'Enter your phone number.',
                   ),
                 ),
               ),
