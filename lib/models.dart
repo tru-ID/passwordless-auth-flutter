@@ -4,8 +4,8 @@ import 'dart:convert';
 PhoneCheck phoneCheckFromJSON(String jsonString) =>
     PhoneCheck.fromJson(json.decode(jsonString));
 
-PhoneCheckResponse phoneCheckResponseFromJson(String jsonString) =>
-    PhoneCheckResponse.fromJson(json.decode(jsonString));
+PhoneCheckResult phoneCheckResultFromJSON(String jsonString) =>
+    PhoneCheckResult.fromJson(json.decode(jsonString));
 
 class PhoneCheck {
   String checkId;
@@ -19,11 +19,11 @@ class PhoneCheck {
       );
 }
 
-class PhoneCheckResponse {
-  String match;
+class PhoneCheckResult {
+  bool match;
 
-  PhoneCheckResponse({required this.match});
+  PhoneCheckResult({required this.match});
 
-  factory PhoneCheckResponse.fromJson(Map<String, dynamic> json) =>
-      PhoneCheckResponse(match: json["match"]);
+  factory PhoneCheckResult.fromJson(Map<String, dynamic> json) =>
+      PhoneCheckResult(match: json["match"]);
 }
