@@ -47,7 +47,7 @@ class _RegistrationState extends State<Registration> {
         child: Column(
           children: [
             Container(
-                padding: EdgeInsets.only(bottom: 45.0),
+                padding: const EdgeInsets.only(bottom: 45.0),
                 margin: const EdgeInsets.only(top: 50),
                 child: Image.asset(
                   'assets/images/tru-id-logo.png',
@@ -64,7 +64,7 @@ class _RegistrationState extends State<Registration> {
                 )),
             Container(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 30),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
                 child: TextField(
                   keyboardType: TextInputType.phone,
                   onChanged: (text) {
@@ -72,7 +72,7 @@ class _RegistrationState extends State<Registration> {
                       phoneNumber = text;
                     });
                   },
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Enter your phone number.',
                   ),
@@ -81,32 +81,91 @@ class _RegistrationState extends State<Registration> {
             ),
             Container(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 30),
+                padding:const  EdgeInsets.symmetric(horizontal: 10, vertical: 30),
                 child: TextButton(
                     onPressed: () async {
+                      setState(() {
+                        loading = true;
+                      });
                       final PhoneCheck? phoneCheckResponse =
                           await createPhoneCheck(phoneNumber!);
 
                       if (phoneCheckResponse == null) {
+                        setState(() {
+                          loading = false;
+                        });
+                        AlertDialog(
+                          title: const Text('Something Went Wrong.'),
+                          content: const Text('Phone number not supported.'),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, 'Cancel'),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, 'OK'),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        );
+                        return;
                         // return dialog
                       }
                       // open check URL
                       TruSdkFlutter sdk = TruSdkFlutter();
 
-                      await sdk.check(phoneCheckResponse!.checkUrl);
+                      await sdk.check(phoneCheckResponse.checkUrl);
 
                       final PhoneCheckResult? phoneCheckResult =
                           await getPhoneCheck(phoneCheckResponse.checkId);
 
-                      if(phoneCheckResult == null){
+                      if (phoneCheckResult == null) {
                         // return dialog
+                        AlertDialog(
+                          title: const Text('Something Went Wrong.'),
+                          content: const Text('Please contact support.'),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, 'Cancel'),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, 'OK'),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        );
+                        return;
                       }
 
-                      if(phoneCheckResult!.match){
+                      if (phoneCheckResult.match) {
                         // set loading to false  and show dialog
+                        setState(() {
+                          loading = false;
+                        });
+                        AlertDialog(
+                          title: const Text('Registration Successful.'),
+                          content: const Text('✅'),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, 'Cancel'),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, 'OK'),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        );
+
+                        return;
+                      } else {
+                        setState(() {
+                          loading = false;
+                        });
                       }
                     },
-                    child: Text('Register')),
+                    child: loading ? const CircularProgressIndicator() : const Text('Register')),
               ),
             )
           ],
