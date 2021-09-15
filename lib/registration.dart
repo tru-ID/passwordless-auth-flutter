@@ -3,7 +3,7 @@ import 'package:passwordless_auth_flutter/models.dart';
 import 'package:http/http.dart' as http;
 import 'package:tru_sdk_flutter/tru_sdk_flutter.dart';
 
-final String baseURL = '<YOUR-LOCAL-TUNNEL-URL>';
+final String baseURL = 'https://neat-fish-91.loca.lt';
 
 class Registration extends StatefulWidget {
   Registration({Key? key}) : super(key: key);
@@ -37,6 +37,47 @@ Future<PhoneCheckResult?> getPhoneCheck(String checkId) async {
   return phoneCheckResultFromJSON(data);
 }
 
+Future<void> errorHandler(BuildContext context, String title, String content) {
+  return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'Cancel'),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'OK'),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      });
+}
+
+Future<void> successHandler(BuildContext context) {
+  return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return  AlertDialog(
+                  title: const Text('Registration Successful.'),
+                  content: const Text('✅'),
+                  actions: <Widget>[
+                  TextButton(
+                   onPressed: () => Navigator.pop(context, 'Cancel'),
+                   child: const Text('Cancel'),
+                   ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, 'OK'),
+                    child: const Text('OK'),
+                     ),
+                          ],
+                        );
+      });
+}
 class _RegistrationState extends State<Registration> {
   String? phoneNumber;
   bool loading = false;
@@ -64,7 +105,8 @@ class _RegistrationState extends State<Registration> {
                 )),
             Container(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
                 child: TextField(
                   keyboardType: TextInputType.phone,
                   onChanged: (text) {
@@ -81,7 +123,8 @@ class _RegistrationState extends State<Registration> {
             ),
             Container(
               child: Padding(
-                padding:const  EdgeInsets.symmetric(horizontal: 10, vertical: 30),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
                 child: TextButton(
                     onPressed: () async {
                       setState(() {
@@ -94,21 +137,9 @@ class _RegistrationState extends State<Registration> {
                         setState(() {
                           loading = false;
                         });
-                        AlertDialog(
-                          title: const Text('Something Went Wrong.'),
-                          content: const Text('Phone number not supported.'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, 'Cancel'),
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, 'OK'),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        );
-                        return;
+                        return errorHandler(context, 'Something went wrong.',
+                            'Phone number not supported');
+
                         // return dialog
                       }
                       // open check URL
@@ -121,21 +152,8 @@ class _RegistrationState extends State<Registration> {
 
                       if (phoneCheckResult == null) {
                         // return dialog
-                        AlertDialog(
-                          title: const Text('Something Went Wrong.'),
-                          content: const Text('Please contact support.'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, 'Cancel'),
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, 'OK'),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        );
-                        return;
+                        return errorHandler(context, 'Something Went Wrong.',
+                            'Please contact support.');
                       }
 
                       if (phoneCheckResult.match) {
@@ -143,29 +161,22 @@ class _RegistrationState extends State<Registration> {
                         setState(() {
                           loading = false;
                         });
-                        AlertDialog(
-                          title: const Text('Registration Successful.'),
-                          content: const Text('✅'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, 'Cancel'),
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, 'OK'),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        );
+                       
 
                         return;
                       } else {
                         setState(() {
                           loading = false;
                         });
+                        return errorHandler(
+                            context,
+                            'Registration Unsuccessful.',
+                            'Please contact your network provider 🙁');
                       }
                     },
-                    child: loading ? const CircularProgressIndicator() : const Text('Register')),
+                    child: loading
+                        ? const CircularProgressIndicator()
+                        : const Text('Register')),
               ),
             )
           ],
