@@ -3,7 +3,7 @@ import 'package:passwordless_auth_flutter/models.dart';
 import 'package:http/http.dart' as http;
 import 'package:tru_sdk_flutter/tru_sdk_flutter.dart';
 
-final String baseURL = 'https://neat-fish-91.loca.lt';
+final String baseURL = '<YOUR_LOCAL_TUNNEL_URL>';
 
 class Registration extends StatefulWidget {
   Registration({Key? key}) : super(key: key);
@@ -16,11 +16,10 @@ Future<PhoneCheck?> createPhoneCheck(String phoneNumber) async {
   final response = await http.post(Uri.parse('$baseURL/phone-check'),
       body: {"phone_number": phoneNumber});
 
-  if (response.statusCode != 201) {
+  if (response.statusCode != 200) {
     return null;
   }
   final String data = response.body;
-
   return phoneCheckFromJSON(data);
 }
 
@@ -62,22 +61,23 @@ Future<void> successHandler(BuildContext context) {
   return showDialog(
       context: context,
       builder: (BuildContext context) {
-        return  AlertDialog(
-                  title: const Text('Registration Successful.'),
-                  content: const Text('✅'),
-                  actions: <Widget>[
-                  TextButton(
-                   onPressed: () => Navigator.pop(context, 'Cancel'),
-                   child: const Text('Cancel'),
-                   ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, 'OK'),
-                    child: const Text('OK'),
-                     ),
-                          ],
-                        );
+        return AlertDialog(
+          title: const Text('Registration Successful.'),
+          content: const Text('✅'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'Cancel'),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'OK'),
+              child: const Text('OK'),
+            ),
+          ],
+        );
       });
 }
+
 class _RegistrationState extends State<Registration> {
   String? phoneNumber;
   bool loading = false;
@@ -132,7 +132,6 @@ class _RegistrationState extends State<Registration> {
                       });
                       final PhoneCheck? phoneCheckResponse =
                           await createPhoneCheck(phoneNumber!);
-
                       if (phoneCheckResponse == null) {
                         setState(() {
                           loading = false;
@@ -145,8 +144,13 @@ class _RegistrationState extends State<Registration> {
                       // open check URL
                       TruSdkFlutter sdk = TruSdkFlutter();
 
-                      await sdk.check(phoneCheckResponse.checkUrl);
+                      String? result =
+                          await sdk.check(phoneCheckResponse.checkUrl);
 
+                      if (result == null) {
+                        errorHandler(context, "Something went wrong.",
+                            "Failed to open Check URL.");
+                      }
                       final PhoneCheckResult? phoneCheckResult =
                           await getPhoneCheck(phoneCheckResponse.checkId);
 
@@ -161,7 +165,6 @@ class _RegistrationState extends State<Registration> {
                         setState(() {
                           loading = false;
                         });
-                       
 
                         return;
                       } else {
