@@ -11,8 +11,7 @@ class Registration extends StatefulWidget {
 
 
 class _RegistrationState extends State<Registration> {
-  String? phoneNumber;
-  bool loading = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,11 +39,7 @@ class _RegistrationState extends State<Registration> {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 30),
                 child: TextField(
                   keyboardType: TextInputType.phone,
-                  onChanged: (text) {
-                    setState(() {
-                      phoneNumber = text;
-                    });
-                  },
+                  onChanged: (text) {  },
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Enter your phone number.',
@@ -57,7 +52,7 @@ class _RegistrationState extends State<Registration> {
                 padding:const  EdgeInsets.symmetric(horizontal: 10, vertical: 30),
                 child: TextButton(
                     onPressed: () async {},
-                    child: loading ? const CircularProgressIndicator() : const Text('Register')),
+                    child: const Text('Register')),
               ),
             )
           ],
