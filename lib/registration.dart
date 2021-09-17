@@ -138,8 +138,6 @@ class _RegistrationState extends State<Registration> {
                         });
                         return errorHandler(context, 'Something went wrong.',
                             'Phone number not supported');
-
-                        // return dialog
                       }
                       // open check URL
                       TruSdkFlutter sdk = TruSdkFlutter();
@@ -148,6 +146,9 @@ class _RegistrationState extends State<Registration> {
                           await sdk.check(phoneCheckResponse.checkUrl);
 
                       if (result == null) {
+                        setState(() {
+                          loading = false;
+                        });
                         errorHandler(context, "Something went wrong.",
                             "Failed to open Check URL.");
                       }
@@ -156,6 +157,9 @@ class _RegistrationState extends State<Registration> {
 
                       if (phoneCheckResult == null) {
                         // return dialog
+                        setState(() {
+                          loading = false;
+                        });
                         return errorHandler(context, 'Something Went Wrong.',
                             'Please contact support.');
                       }
@@ -166,7 +170,7 @@ class _RegistrationState extends State<Registration> {
                           loading = false;
                         });
 
-                        return;
+                        return successHandler(context);
                       } else {
                         setState(() {
                           loading = false;
