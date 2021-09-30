@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:passwordless_auth_flutter/models.dart';
 import 'package:http/http.dart' as http;
@@ -130,6 +132,37 @@ class _RegistrationState extends State<Registration> {
                       setState(() {
                         loading = true;
                       });
+
+                      TruSdkFlutter sdk = TruSdkFlutter();
+
+                      String? reachabilityInfo = await sdk.isReachable();
+
+                      ReachabilityDetails reachabilityDetails =
+                          json.decode(reachabilityInfo!);
+
+                      if (reachabilityDetails.error?.status == 400) {
+                        return errorHandler(context, "Something Went Wrong.",
+                            "Mobile Operator not supported.");
+                      }
+                      bool isPhoneCheckSupported = false;
+
+                      if (reachabilityDetails.error?.status != 412) {
+                        isPhoneCheckSupported = false;
+
+                        for (var products in reachabilityDetails.products!) {
+                          if (products.productName == "Sim Check") {
+                            isPhoneCheckSupported = true;
+                          }
+                        }
+                      } else {
+                        isPhoneCheckSupported = true;
+                      }
+
+                      if (!isPhoneCheckSupported) {
+                        return errorHandler(context, "Something went wrong.",
+                            "PhoneCheck is not supported on MNO.");
+                      }
+                      
                       final PhoneCheck? phoneCheckResponse =
                           await createPhoneCheck(phoneNumber!);
                       if (phoneCheckResponse == null) {
@@ -140,7 +173,6 @@ class _RegistrationState extends State<Registration> {
                             'Phone number not supported');
                       }
                       // open check URL
-                      TruSdkFlutter sdk = TruSdkFlutter();
 
                       String? result =
                           await sdk.check(phoneCheckResponse.checkUrl);
@@ -149,7 +181,7 @@ class _RegistrationState extends State<Registration> {
                         setState(() {
                           loading = false;
                         });
-                        errorHandler(context, "Something went wrong.",
+                        return errorHandler(context, "Something went wrong.",
                             "Failed to open Check URL.");
                       }
                       final PhoneCheckResult? phoneCheckResult =
