@@ -137,6 +137,8 @@ class _RegistrationState extends State<Registration> {
 
                       String? reachabilityInfo = await sdk.isReachable();
 
+                      print("-------------REACHABILITTY RESULT --------------");
+                      print(reachabilityInfo);
                       ReachabilityDetails reachabilityDetails =
                           json.decode(reachabilityInfo!);
 
@@ -150,7 +152,7 @@ class _RegistrationState extends State<Registration> {
                         isPhoneCheckSupported = false;
 
                         for (var products in reachabilityDetails.products!) {
-                          if (products.productName == "Sim Check") {
+                          if (products.productName == "Phone Check") {
                             isPhoneCheckSupported = true;
                           }
                         }
@@ -162,7 +164,7 @@ class _RegistrationState extends State<Registration> {
                         return errorHandler(context, "Something went wrong.",
                             "PhoneCheck is not supported on MNO.");
                       }
-                      
+
                       final PhoneCheck? phoneCheckResponse =
                           await createPhoneCheck(phoneNumber!);
                       if (phoneCheckResponse == null) {
