@@ -2,10 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:tru_sdk_flutter/tru_sdk_flutter.dart';
+import 'dart:convert';
 import 'package:passwordless_auth_flutter/models.dart';
 import 'package:http/http.dart' as http;
 
-final String baseURL = '<LOCAL_TUNNEL_URL>';
+final String baseURL = '{YOUR_NGROK_URL}';
 
 class Registration extends StatefulWidget {
   Registration({Key? key}) : super(key: key);
@@ -15,29 +16,16 @@ class Registration extends StatefulWidget {
 }
 
 Future<PhoneCheck?> createPhoneCheck(String phoneNumber) async {
-  final response = await http.post(Uri.parse('$baseURL/phone-check'),
+  final response = await http.post(Uri.parse('$baseURL/v0.2/phone-check'),
       body: {"phone_number": phoneNumber});
 
   if (response.statusCode != 200) {
     return null;
   }
 
-  final String data = response.body;
+  PhoneCheck phoneCheck = PhoneCheck.fromJson(jsonDecode(response.body));
 
-  return phoneCheckFromJSON(data);
-}
-
-Future<PhoneCheckResult?> getPhoneCheck(String checkId) async {
-  final response =
-      await http.get(Uri.parse('$baseURL/phone-check?check_id=$checkId'));
-
-  if (response.statusCode != 200) {
-    return null;
-  }
-
-  final String data = response.body;
-
-  return phoneCheckResultFromJSON(data);
+  return phoneCheck;
 }
 
 Future<void> errorHandler(BuildContext context, String title, String content) {
@@ -85,6 +73,37 @@ Future<void> successHandler(BuildContext context) {
 class _RegistrationState extends State<Registration> {
   String? phoneNumber;
   bool loading = false;
+
+  Future<PhoneCheckResult> exchangeCode(
+      String checkID, String code, String? referenceID) async {
+    var body = jsonEncode(<String, String>{
+      'code': code,
+      'check_id': checkID,
+      'reference_id': (referenceID != null) ? referenceID : ""
+    });
+
+    final response = await http.post(
+      Uri.parse('$baseURL/v0.2/phone-check/exchange-code'),
+      body: body,
+      headers: <String, String>{
+        'content-type': 'application/json; charset=UTF-8',
+      },
+    );
+    print("response request ${response.request}");
+    if (response.statusCode == 200) {
+      PhoneCheckResult exchangeCheckRes =
+          PhoneCheckResult.fromJson(jsonDecode(response.body));
+      print("Exchange Check Result $exchangeCheckRes");
+      if (exchangeCheckRes.match) {
+        print("✅ successful PhoneCheck match");
+      } else {
+        print("❌ failed PhoneCheck match");
+      }
+      return exchangeCheckRes;
+    } else {
+      throw Exception('Failed to exchange Code');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -136,27 +155,29 @@ class _RegistrationState extends State<Registration> {
                       loading = true;
                     });
 
-                    // check if we have coverage
                     TruSdkFlutter sdk = TruSdkFlutter();
 
-                    String? reachabilityInfo = await sdk.isReachable();
-
-                    ReachabilityDetails reachabilityDetails =
-                        ReachabilityDetails.fromJson(
-                            jsonDecode(reachabilityInfo!));
-
-                    if (reachabilityDetails.error?.status == 400) {
-                      return errorHandler(context, "Something Went Wrong.",
-                          "Mobile Operator not supported.");
-                    }
-
+                    Map<Object?, Object?> reach = await sdk.openWithDataCellular(
+                        "https://eu.api.tru.id/public/coverage/v0.1/device_ip",
+                        false);
+                    print("isReachable = $reach");
                     bool isPhoneCheckSupported = false;
 
-                    if (reachabilityDetails.error?.status != 412) {
-                      isPhoneCheckSupported = false;
+                    if (reach.containsKey("http_status") &&
+                        reach["http_status"] != 200) {
+                      if (reach["http_status"] == 400 ||
+                          reach["http_status"] == 412) {
+                        return errorHandler(context, "Something Went Wrong.",
+                            "Mobile Operator not supported, or not a Mobile IP.");
+                      }
+                    } else if (reach.containsKey("http_status") ||
+                        reach["http_status"] == 200) {
+                      Map body =
+                          reach["response_body"] as Map<dynamic, dynamic>;
+                      Coverage coverage = Coverage.fromJson(body);
 
-                      for (var products in reachabilityDetails.products!) {
-                        if (products.productName == "Phone Check") {
+                      for (var product in coverage.products!) {
+                        if (product.name == "Phone Check") {
                           isPhoneCheckSupported = true;
                         }
                       }
@@ -181,11 +202,11 @@ class _RegistrationState extends State<Registration> {
                           'Phone number not supported');
                     }
 
-                    // open check URL
-                    String? result =
-                        await sdk.check(phoneCheckResponse.checkUrl);
+                    Map result = await sdk.openWithDataCellular(
+                        phoneCheckResponse.url, false);
+                    print("openWithDataCellular Results -> $result");
 
-                    if (result == null) {
+                    if (result.containsKey("error")) {
                       setState(() {
                         loading = false;
                       });
@@ -194,31 +215,45 @@ class _RegistrationState extends State<Registration> {
                           "Failed to open Check URL.");
                     }
 
-                    final PhoneCheckResult? phoneCheckResult =
-                        await getPhoneCheck(phoneCheckResponse.checkId);
+                    if (result.containsKey("http_status") &&
+                        result["http_status"] == 200) {
+                      Map body =
+                          result["response_body"] as Map<dynamic, dynamic>;
+                      if (body["code"] != null) {
+                        CheckSuccessBody successBody =
+                            CheckSuccessBody.fromJson(body);
 
-                    if (phoneCheckResult == null) {
-                      setState(() {
-                        loading = false;
-                      });
+                        try {
+                          PhoneCheckResult exchangeResult = await exchangeCode(
+                              successBody.checkId,
+                              successBody.code,
+                              successBody.referenceId);
 
-                      return errorHandler(context, 'Something Went Wrong.',
-                          'Please contact support.');
-                    }
+                          if (exchangeResult.match) {
+                            setState(() {
+                              loading = false;
+                            });
 
-                    if (phoneCheckResult.match) {
-                      setState(() {
-                        loading = false;
-                      });
+                            return successHandler(context);
+                          } else {
+                            setState(() {
+                              loading = false;
+                            });
 
-                      return successHandler(context);
-                    } else {
-                      setState(() {
-                        loading = false;
-                      });
+                            return errorHandler(
+                                context,
+                                "Something went wrong.",
+                                "Unable to login. Please try again later");
+                          }
+                        } catch (error) {
+                          setState(() {
+                            loading = false;
+                          });
 
-                      return errorHandler(context, 'Registration Unsuccessful.',
-                          'Please contact your network provider 🙁');
+                          return errorHandler(context, "Something went wrong.",
+                              "Unable to login. Please try again later");
+                        }
+                      }
                     }
                   },
                   child: loading
