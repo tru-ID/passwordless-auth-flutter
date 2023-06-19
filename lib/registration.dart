@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:tru_sdk_flutter/tru_sdk_flutter.dart';
-import 'dart:convert';
 import 'package:passwordless_auth_flutter/models.dart';
 import 'package:http/http.dart' as http;
 
@@ -73,6 +72,20 @@ Future<void> successHandler(BuildContext context) {
 class _RegistrationState extends State<Registration> {
   String? phoneNumber;
   bool loading = false;
+
+  Future<TokenResponse> getCoverageAccessToken() async {
+    final response = await http.get(
+      Uri.parse('$baseURL/coverage-access-token'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
+    if (response.statusCode == 200) {
+      return TokenResponse.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to get coverage access token: No access token');
+    }
+  }
 
   Future<PhoneCheckResult> exchangeCode(
       String checkID, String code, String? referenceID) async {
@@ -157,9 +170,12 @@ class _RegistrationState extends State<Registration> {
 
                     TruSdkFlutter sdk = TruSdkFlutter();
 
-                    Map<Object?, Object?> reach = await sdk.openWithDataCellular(
-                        "https://eu.api.tru.id/public/coverage/v0.1/device_ip",
-                        false);
+                    var tokenResponse = await getCoverageAccessToken();
+                    var token = tokenResponse.token;
+                    var url = tokenResponse.url;
+
+                    Map reach = await sdk.openWithDataCellularAndAccessToken(
+                        url, token, true);
                     print("isReachable = $reach");
                     bool isPhoneCheckSupported = false;
 
@@ -266,5 +282,14 @@ class _RegistrationState extends State<Registration> {
         ),
       ),
     );
+  }
+}
+
+class TokenResponse {
+  final String token;
+  final String url;
+  TokenResponse({required this.token, required this.url});
+  factory TokenResponse.fromJson(Map<dynamic, dynamic> json) {
+    return TokenResponse(token: json['token'], url: json['url']);
   }
 }
